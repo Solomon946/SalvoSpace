@@ -1039,7 +1039,9 @@ function setupEvents() {
     // Settings toggles
     setupToggle('settingsThemeToggle', () => toggleTheme());
     setupToggle('compactModeToggle', (on) => { state.settings.compactMode = on; applyCompactMode(); saveSettings(); });
-    setupToggle('animationsToggle', (on) => { state.settings.animations = on; saveSettings(); });
+    setupToggle(
+        'animationsToggle', (on) => { state.settings.animations = on; saveSettings(); }
+    );
     setupToggle('taskRemindersToggle', (on) => { state.settings.taskReminders = on; saveSettings(); });
     setupToggle('completionAlertsToggle', (on) => { state.settings.completionAlerts = on; saveSettings(); });
     setupToggle('dailySummaryToggle', (on) => { state.settings.dailySummary = on; saveSettings(); });
@@ -1116,12 +1118,26 @@ function setupKeys() {
 function qs(sel) { return document.querySelector(sel); }
 function qsa(sel) { return document.querySelectorAll(sel); }
 function doc() { return document.documentElement; }
-function ls(k) { try { return localStorage.getItem(k); } catch { return null; } }
-function lss(k, v) { try { localStorage.setItem(k, v); } catch { } }
-function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
-function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-function setText(id, val) { const el = qs(`#${id}`); if (el) el.textContent = val; }
-function setWidth(id, pct) { const el = qs(`#${id}`); if (el) el.style.width = `${Math.min(100, Math.max(0, pct))}%`; }
+function ls(k) {
+    try {
+        return localStorage.getItem(k);
+    } catch { return null; }
+}
+function lss(k, v) {
+    try { localStorage.setItem(k, v); } catch { }
+}
+function uid() {
+    return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+function escHtml(s) {
+    const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+}
+function setText(id, val) {
+    const el = qs(`#${id}`); if (el) el.textContent = val;
+}
+function setWidth(id, pct) {
+    const el = qs(`#${id}`); if (el) el.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+}
 
 function shakeEl(el) {
     if (!el) return;
