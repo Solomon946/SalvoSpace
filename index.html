@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="SalvoSpace — Smart Productivity System" />
+    <link rel="icon" href="/favicon_io/favicon.ico" type="image/x-icon">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon_io/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon_io/favicon-16x16.png">
+    <link rel="apple-touch-icon" href="/favicon_io/apple-touch-icon.png">
+    <link rel="manifest" href="/favicon_io/site.webmanifest">
+    <title>SalvoSpace - Smart Productivity System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Host+Grotesk:ital,wght@0,300..800;1,300..800&family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+
+    <div class="bg-canvas" aria-hidden="true">
+        <div class="bg-orb orb-1"></div>
+        <div class="bg-orb orb-2"></div>
+        <div class="bg-orb orb-3"></div>
+        <div class="bg-grid"></div>
+    </div>
+
+    <div class="global-progress" id="globalProgress">
+        <div class="global-progress-fill" id="globalProgressFill"></div>
+    </div>
+
+    <button class="scroll-top-btn" id="scrollTopBtn" aria-label="Scroll to top">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="18 15 12 9 6 15" />
+        </svg>
+    </button>
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-wrap">
+
+            <!-- Brand -->
+            <div class="brand">
+                <div class="brand-mark">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z" fill="url(#bm1)" />
+                        <path d="M2 17l10 5 10-5" stroke="url(#bm2)" stroke-width="2" stroke-linecap="round" />
+                        <path d="M2 12l10 5 10-5" stroke="url(#bm3)" stroke-width="2" stroke-linecap="round"
+                            opacity="0.6" />
+                        <defs>
+                            <linearGradient id="bm1" x1="2" y1="2" x2="22" y2="12">
+                                <stop stop-color="#1D4ED8" />
+                                <stop offset="1" stop-color="#2563EB" />
+                            </linearGradient>
+                            <linearGradient id="bm2" x1="2" y1="17" x2="22" y2="22">
+                                <stop stop-color="#1D4ED8" />
+                                <stop offset="1" stop-color="#2563EB" />
+                            </linearGradient>
+                            <linearGradient id="bm3" x1="2" y1="12" x2="22" y2="17">
+                                <stop stop-color="#0891B2" />
+                                <stop offset="1" stop-color="#A78BFA" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <span class="brand-name">SalvoSpace</span>
+                <button class="sidebar-x" id="sidebarX" aria-label="Close sidebar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Sidebar Controls: Theme Toggle + Score -->
+            <div class="sidebar-controls">
+                <button class="sc-theme-btn" id="scThemeBtn" aria-label="Toggle theme">
+                    <svg class="sc-sun-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <circle cx="12" cy="12" r="5" />
+                        <line x1="12" y1="1" x2="12" y2="3" />
+                        <line x1="12" y1="21" x2="12" y2="23" />
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                        <line x1="1" y1="12" x2="3" y2="12" />
+                        <line x1="21" y1="12" x2="23" y2="12" />
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                    </svg>
+                    <svg class="sc-moon-ico" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    </svg>
+                    <span class="sc-theme-label" id="scThemeLabel">Dark Mode</span>
+                    <div class="sc-theme-pill" id="scThemePill">
+                        <div class="sc-pill-dot"></div>
+                    </div>
+                </button>
+                <div class="sc-score-wrap">
+                    <div class="sc-score-ring">
+                        <svg viewBox="0 0 40 40" width="40" height="40">
+                            <defs>
+                                <linearGradient id="scpGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#1D4ED8" />
+                                    <stop offset="100%" stop-color="#2563EB" />
+                                </linearGradient>
+                            </defs>
+                            <circle cx="20" cy="20" r="16" fill="none" stroke="var(--border2)" stroke-width="3.5" />
+                            <circle id="scpCircle" cx="20" cy="20" r="16" fill="none" stroke="url(#scpGrad)"
+                                stroke-width="3.5" stroke-linecap="round" stroke-dasharray="100.5"
+                                stroke-dashoffset="100.5" transform="rotate(-90 20 20)"
+                                style="transition:stroke-dashoffset .8s cubic-bezier(.4,0,.2,1)" />
+                        </svg>
+                        <span class="sc-score-num" id="scpNum">0</span>
+                    </div>
+                    <div class="sc-score-info">
+                        <span class="sc-score-title">Score</span>
+                        <span class="sc-score-status" id="scpStatus">Add tasks</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nav -->
+            <nav class="snav">
+                <p class="snav-label">MENU</p>
+                <ul>
+                    <li><a class="snav-link active" data-view="dashboard" href="#">
+                            <span class="snav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                                    <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                                    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                                    <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                                </svg></span>
+                            <span>Dashboard</span>
+                        </a></li>
+                    <li><a class="snav-link" data-view="tasks" href="#">
+                            <span class="snav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path d="M9 11l3 3L22 4" />
+                                    <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+                                </svg></span>
+                            <span>My Tasks</span>
+                            <span class="snav-badge" id="snavBadge">0</span>
+                        </a></li>
+                    <li><a class="snav-link" data-view="analytics" href="#">
+                            <span class="snav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="20" x2="18" y2="10" />
+                                    <line x1="12" y1="20" x2="12" y2="4" />
+                                    <line x1="6" y1="20" x2="6" y2="14" />
+                                </svg></span>
+                            <span>Analytics</span>
+                        </a></li>
+                    <li><a class="snav-link" data-view="insights" href="#">
+                            <span class="snav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="M12 16v-4M12 8h.01" />
+                                </svg></span>
+                            <span>Insights</span>
+                        </a></li>
+                    <li><a class="snav-link" data-view="reports" href="#">
+                            <span class="snav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                    <line x1="16" y1="13" x2="8" y2="13" />
+                                    <line x1="16" y1="17" x2="8" y2="17" />
+                                </svg></span>
+                            <span>Reports</span>
+                        </a></li>
+                    <li><a class="snav-link" data-view="settings" href="#">
+                            <span class="snav-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="3" />
+                                    <path
+                                        d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41M12 2v2M12 20v2M2 12h2M20 12h2" />
+                                </svg></span>
+                            <span>Settings</span>
+                        </a></li>
+                </ul>
+            </nav>
+
+            <!-- Productivity mini card -->
+            <div class="sidebar-score-card">
+                <p class="ssc-label">Today's Score</p>
+                <div class="ssc-value" id="sidebarScore">—</div>
+                <div class="ssc-bar-track">
+                    <div class="ssc-bar-fill" id="sidebarScoreBar"></div>
+                </div>
+                <p class="ssc-status" id="sidebarScoreStatus">Add tasks to start</p>
+            </div>
+
+        </div>
+    </aside>
+
+    <div class="sidebar-veil" id="sidebarVeil"></div>
+
+    <!-- ===== MAIN ===== -->
+    <div class="shell" id="shell">
+
+        <!-- Header -->
+        <header class="topbar" id="topbar">
+            <div class="topbar-left">
+                <button class="burger" id="burgerBtn" aria-label="Toggle sidebar">
+                    <span></span><span></span><span></span>
+                </button>
+                <div class="topsearch">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                    </svg>
+                    <input type="text" id="searchInput" placeholder="Search tasks… (Ctrl+K)" autocomplete="off" />
+                    <div class="search-results" id="searchResults"></div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="sort-wrap">
+                    <button class="topbar-btn" id="sortBtn" title="Sort tasks">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="21" y1="10" x2="7" y2="10" />
+                            <line x1="21" y1="6" x2="3" y2="6" />
+                            <line x1="21" y1="14" x2="11" y2="14" />
+                            <line x1="21" y1="18" x2="3" y2="18" />
+                        </svg>
+                    </button>
+                    <div class="sort-dropdown" id="sortDropdown">
+                        <button class="sort-opt" data-sort="default">Default</button>
+                        <button class="sort-opt" data-sort="priority">By Priority</button>
+                        <button class="sort-opt" data-sort="time">By Time</button>
+                        <button class="sort-opt" data-sort="name">By Name</button>
+                    </div>
+                </div>
+                <button class="theme-btn" id="themeBtn" aria-label="Toggle theme">
+                    <span class="theme-sun">☀️</span>
+                    <span class="theme-moon">🌙</span>
+                </button>
+                <!-- <div class="topbar-avatar">AK</div> -->
+            </div>
+        </header>
+
+        <!-- ===== ALL VIEW PANELS ===== -->
+        <main class="content" id="mainContent">
+
+            <!-- ====== DASHBOARD PANEL ====== -->
+            <div class="view-panel active" id="view-dashboard">
+
+                <section class="page-hero reveal">
+                    <div class="hero-text">
+                        <h1 id="heroTitle">Good morning, Sagnik! ☀️</h1>
+                        <p id="heroSub">Track, optimize, and crush your goals today.</p>
+                    </div>
+                    <div class="hero-meta">
+                        <div class="hero-date" id="heroDate"></div>
+                        <button class="weekly-report-btn" id="weeklyReportBtn">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                            </svg>
+                            Weekly Report
+                        </button>
+                    </div>
+                </section>
+
+                <!-- STAT ROW — Image 1 style -->
+                <div class="stat-row reveal">
+                    <div class="stat-card-v2 sc-blue">
+                        <div class="scv2-label">TOTAL TASKS</div>
+                        <div class="scv2-value" id="statTotal">0</div>
+                        <div class="scv2-sub">All time · today</div>
+                    </div>
+                    <div class="stat-card-v2 sc-green">
+                        <div class="scv2-label">COMPLETED</div>
+                        <div class="scv2-value" id="statDone">0</div>
+                        <div class="scv2-sub" id="statDoneSub">Tasks done</div>
+                    </div>
+                    <div class="stat-card-v2 sc-red">
+                        <div class="scv2-label">PENDING</div>
+                        <div class="scv2-value" id="statPending">0</div>
+                        <div class="scv2-sub">In progress</div>
+                    </div>
+                    <div class="stat-card-v2 sc-amber">
+                        <div class="scv2-label">PRODUCTIVITY SCORE</div>
+                        <div class="scv2-value" id="statScore">0</div>
+                        <div class="scv2-sub">pts today</div>
+                    </div>
+                </div>
+
+                <!-- TASKS BY TIME -->
+                <section class="section reveal" id="tasksSection">
+                    <div class="section-header">
+                        <h2 class="section-title">Today's Tasks</h2>
+                        <div class="section-actions">
+                            <button class="filter-pill active" data-f="all">All</button>
+                            <button class="filter-pill" data-f="pending">Pending</button>
+                            <button class="filter-pill" data-f="done">Done</button>
+                        </div>
+                    </div>
+
+                    <div class="time-group" id="tg-morning">
+                        <div class="tg-header">
+                            <span class="tg-emoji">🌅</span>
+                            <span class="tg-name">Morning</span>
+                            <span class="tg-time">6 AM – 12 PM</span>
+                            <span class="tg-count" id="cnt-morning">0</span>
+                        </div>
+                        <div class="tg-tasks" id="tasks-morning"></div>
+                        <div class="tg-empty" id="empty-morning" style="display:none">No morning tasks. Add one!</div>
+                    </div>
+
+                    <div class="time-group" id="tg-afternoon">
+                        <div class="tg-header">
+                            <span class="tg-emoji">☀️</span>
+                            <span class="tg-name">Afternoon</span>
+                            <span class="tg-time">12 PM – 6 PM</span>
+                            <span class="tg-count" id="cnt-afternoon">0</span>
+                        </div>
+                        <div class="tg-tasks" id="tasks-afternoon"></div>
+                        <div class="tg-empty" id="empty-afternoon" style="display:none">No afternoon tasks. Add one!
+                        </div>
+                    </div>
+
+                    <div class="time-group" id="tg-evening">
+                        <div class="tg-header">
+                            <span class="tg-emoji">🌙</span>
+                            <span class="tg-name">Evening</span>
+                            <span class="tg-time">6 PM – 10 PM</span>
+                            <span class="tg-count" id="cnt-evening">0</span>
+                        </div>
+                        <div class="tg-tasks" id="tasks-evening"></div>
+                        <div class="tg-empty" id="empty-evening" style="display:none">No evening tasks. Add one!</div>
+                    </div>
+                </section>
+
+                <!-- PRODUCTIVITY SCORE -->
+                <section class="section reveal" id="scoreSection">
+                    <div class="section-header">
+                        <h2 class="section-title">Productivity Score</h2>
+                        <span class="section-badge" id="scoreBadge">—</span>
+                    </div>
+                    <div class="score-grid">
+                        <div class="score-ring-card">
+                            <div class="score-ring-wrap">
+                                <svg class="score-svg" width="160" height="160" viewBox="0 0 160 160">
+                                    <defs>
+                                        <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stop-color="#1D4ED8" />
+                                            <stop offset="100%" stop-color="#2563EB" />
+                                        </linearGradient>
+                                    </defs>
+                                    <circle class="score-ring-bg" cx="80" cy="80" r="66" />
+                                    <circle class="score-ring-fill" id="scoreRingFill" cx="80" cy="80" r="66"
+                                        stroke-dasharray="414.69" stroke-dashoffset="414.69" />
+                                </svg>
+                                <div class="score-ring-inner">
+                                    <span class="score-big" id="scoreBig">0</span>
+                                    <span class="score-unit">pts</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="score-details">
+                            <div class="score-bar-item">
+                                <div class="sbi-header">
+                                    <span>Task Completion</span>
+                                    <span id="sbiCompletion">0%</span>
+                                </div>
+                                <div class="sbi-track">
+                                    <div class="sbi-fill comp-fill" id="compFill"></div>
+                                </div>
+                            </div>
+                            <div class="score-bar-item">
+                                <div class="sbi-header">
+                                    <span>High Priority Done</span>
+                                    <span id="sbiHighPrio">0%</span>
+                                </div>
+                                <div class="sbi-track">
+                                    <div class="sbi-fill high-fill" id="highFill"></div>
+                                </div>
+                            </div>
+                            <div class="score-bar-item">
+                                <div class="sbi-header">
+                                    <span>Morning Streak</span>
+                                    <span id="sbiMorning">0%</span>
+                                </div>
+                                <div class="sbi-track">
+                                    <div class="sbi-fill morn-fill" id="mornFill"></div>
+                                </div>
+                            </div>
+                            <div class="score-formula">
+                                <span class="formula-tag">Formula</span>
+                                <code>Score = (Done/Total)×70 + HighPrioBonus×20 + MorningBonus×10</code>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div><!-- end dashboard -->
+
+            <!-- ====== MY TASKS PANEL ====== -->
+            <div class="view-panel" id="view-tasks">
+                <section class="page-hero reveal">
+                    <div class="hero-text">
+                        <h1>My Tasks 📝</h1>
+                        <p>All your tasks in one place. Filter, sort and manage.</p>
+                    </div>
+                    <div class="hero-meta">
+                        <button class="weekly-report-btn" id="addTaskBtnTasks">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                            Add Task
+                        </button>
+                    </div>
+                </section>
+
+                <div class="tasks-panel reveal">
+                    <div class="tp-toolbar">
+                        <div class="tp-filters">
+                            <button class="filter-pill active" data-tf="all">All</button>
+                            <button class="filter-pill" data-tf="pending">Pending</button>
+                            <button class="filter-pill" data-tf="done">Done</button>
+                            <button class="filter-pill" data-tf="high">🔴 High</button>
+                            <button class="filter-pill" data-tf="medium">🟡 Medium</button>
+                            <button class="filter-pill" data-tf="low">🟢 Low</button>
+                        </div>
+                        <button class="tp-clear-btn" id="clearDoneTasks">Clear Done</button>
+                    </div>
+
+                    <div class="tp-stats-row">
+                        <div class="tp-stat"><span id="tpTotal">0</span><span>Total</span></div>
+                        <div class="tp-stat green"><span id="tpDone">0</span><span>Done</span></div>
+                        <div class="tp-stat red"><span id="tpPending">0</span><span>Pending</span></div>
+                        <div class="tp-stat amber"><span id="tpHigh">0</span><span>High Priority</span></div>
+                    </div>
+
+                    <div class="tp-list" id="tpList">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+            </div><!-- end tasks -->
+
+            <!-- ====== ANALYTICS PANEL ====== -->
+            <div class="view-panel" id="view-analytics">
+                <section class="page-hero reveal">
+                    <div class="hero-text">
+                        <h1>Analytics 📊</h1>
+                        <p>Visual breakdown of your productivity metrics.</p>
+                    </div>
+                    <div class="hero-meta">
+                        <button class="export-btn" id="exportBtn">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                            Export
+                        </button>
+                    </div>
+                </section>
+
+                <div class="charts-grid reveal" id="chartsGrid">
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <span class="chart-title">Tasks Overview</span>
+                            <span class="chart-subtitle">Completed vs Pending</span>
+                        </div>
+                        <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <span class="chart-title">Priority Split</span>
+                            <span class="chart-subtitle">By priority level</span>
+                        </div>
+                        <div class="chart-wrap"><canvas id="pieChart"></canvas></div>
+                    </div>
+                    <div class="chart-card chart-card-wide">
+                        <div class="chart-card-header">
+                            <span class="chart-title">Weekly Productivity Trend</span>
+                            <span class="chart-subtitle">Last 7 days performance</span>
+                        </div>
+                        <div class="chart-wrap chart-wrap-tall"><canvas id="lineChart"></canvas></div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <span class="chart-title">Completion Rate</span>
+                            <span class="chart-subtitle">Overall progress</span>
+                        </div>
+                        <div class="chart-wrap"><canvas id="doughnutChart"></canvas></div>
+                    </div>
+                </div>
+            </div><!-- end analytics -->
+
+            <!-- ====== INSIGHTS PANEL — Image 2 style ====== -->
+            <div class="view-panel" id="view-insights">
+                <section class="page-hero reveal">
+                    <div class="hero-text">
+                        <h1>✦ Smart Insights</h1>
+                        <p>AI-powered analysis of your productivity patterns.</p>
+                    </div>
+                    <div class="hero-meta">
+                        <button class="weekly-report-btn" id="refreshInsightsBtn">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <polyline points="1 4 1 10 7 10" />
+                                <path d="M3.51 15a9 9 0 1 0 .49-3.38" />
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
+                </section>
+
+                <div class="insights-panel reveal">
+                    <div class="insights-list" id="insightsList">
+                        <!-- Rendered by JS in Image 2 style -->
+                    </div>
+                </div>
+            </div><!-- end insights -->
+
+            <!-- ====== REPORTS PANEL ====== -->
+            <div class="view-panel" id="view-reports">
+                <section class="page-hero reveal">
+                    <div class="hero-text">
+                        <h1>Reports 📋</h1>
+                        <p>Detailed summaries of your weekly and monthly performance.</p>
+                    </div>
+                    <div class="hero-meta">
+                        <div class="report-tab-group">
+                            <button class="rtab active" data-rperiod="weekly" id="rtabWeekly">Weekly</button>
+                            <button class="rtab" data-rperiod="monthly" id="rtabMonthly">Monthly</button>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="reports-content reveal" id="reportsContent">
+                    <!-- Rendered by JS -->
+                </div>
+            </div><!-- end reports -->
+
+            <!-- ====== SETTINGS PANEL ====== -->
+            <div class="view-panel" id="view-settings">
+                <section class="page-hero reveal">
+                    <div class="hero-text">
+                        <h1>Settings ⚙️</h1>
+                        <p>Customize your SalvoSpace experience.</p>
+                    </div>
+                </section>
+
+                <div class="settings-grid reveal">
+
+                    <!-- Appearance -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <span class="settings-icon">🎨</span>
+                            <div>
+                                <h3>Appearance</h3>
+                                <p>Customize the look and feel</p>
+                            </div>
+                        </div>
+                        <div class="settings-body">
+                            <div class="settings-row">
+                                <div class="sr-info">
+                                    <span class="sr-label">Theme</span>
+                                    <span class="sr-sub">Switch between dark and light mode</span>
+                                </div>
+                                <button class="toggle-switch" id="settingsThemeToggle" role="switch"
+                                    aria-checked="true">
+                                    <div class="toggle-*****"></div>
+                                </button>
+                            </div>
+                            <div class="settings-row">
+                                <div class="sr-info">
+                                    <span class="sr-label">Compact Mode</span>
+                                    <span class="sr-sub">Reduce card padding and spacing</span>
+                                </div>
+                                <button class="toggle-switch" id="compactModeToggle" role="switch" aria-checked="false">
+                                    <div class="toggle-*****"></div>
+                                </button>
+                            </div>
+                            <div class="settings-row">
+                                <div class="sr-info">
+                                    <span class="sr-label">Animations</span>
+                                    <span class="sr-sub">Enable smooth transitions</span>
+                                </div>
+                                <button class="toggle-switch active" id="animationsToggle" role="switch"
+                                    aria-checked="true">
+                                    <div class="toggle-*****"></div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <span class="settings-icon">👤</span>
+                            <div>
+                                <h3>Profile</h3>
+                                <p>Your personal information</p>
+                            </div>
+                        </div>
+                        <div class="settings-body">
+                            <div class="fg">
+                                <label for="settingsName">Display Name</label>
+                                <input type="text" id="settingsName" placeholder="Alex Kumar" value="Alex Kumar" />
+                            </div>
+                            <div class="fg">
+                                <label for="settingsRole">Role / Title</label>
+                                <input type="text" id="settingsRole" placeholder="Pro Member" value="Pro Member" />
+                            </div>
+                            <div class="fg">
+                                <label for="settingsInitials">Avatar Initials</label>
+                                <input type="text" id="settingsInitials" placeholder="SM" value="SM" maxlength="2" />
+                            </div>
+                            <button class="msave settings-save-btn" id="saveProfileBtn">Save Profile</button>
+                        </div>
+                    </div>
+
+                    <!-- Notifications -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <span class="settings-icon">🔔</span>
+                            <div>
+                                <h3>Notifications</h3>
+                                <p>Manage alert preferences</p>
+                            </div>
+                        </div>
+                        <div class="settings-body">
+                            <div class="settings-row">
+                                <div class="sr-info">
+                                    <span class="sr-label">Task Reminders</span>
+                                    <span class="sr-sub">Notify on pending high-priority tasks</span>
+                                </div>
+                                <button class="toggle-switch active" id="taskRemindersToggle" role="switch"
+                                    aria-checked="true">
+                                    <div class="toggle-*****"></div>
+                                </button>
+                            </div>
+                            <div class="settings-row">
+                                <div class="sr-info">
+                                    <span class="sr-label">Completion Alerts</span>
+                                    <span class="sr-sub">Celebrate task completions</span>
+                                </div>
+                                <button class="toggle-switch active" id="completionAlertsToggle" role="switch"
+                                    aria-checked="true">
+                                    <div class="toggle-*****"></div>
+                                </button>
+                            </div>
+                            <div class="settings-row">
+                                <div class="sr-info">
+                                    <span class="sr-label">Daily Summary</span>
+                                    <span class="sr-sub">End-of-day progress digest</span>
+                                </div>
+                                <button class="toggle-switch" id="dailySummaryToggle" role="switch"
+                                    aria-checked="false">
+                                    <div class="toggle-*****"></div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Task Defaults -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <span class="settings-icon">📋</span>
+                            <div>
+                                <h3>Task Defaults</h3>
+                                <p>Default values for new tasks</p>
+                            </div>
+                        </div>
+                        <div class="settings-body">
+                            <div class="fg">
+                                <label for="defaultPriority">Default Priority</label>
+                                <div class="sel-wrap">
+                                    <select id="defaultPriority">
+                                        <option value="high">🔴 High</option>
+                                        <option value="medium" selected>🟡 Medium</option>
+                                        <option value="low">🟢 Low</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="fg">
+                                <label for="defaultTime">Default Time of Day</label>
+                                <div class="sel-wrap">
+                                    <select id="defaultTime">
+                                        <option value="morning" selected>🌅 Morning</option>
+                                        <option value="afternoon">☀️ Afternoon</option>
+                                        <option value="evening">🌙 Evening</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button class="msave settings-save-btn" id="saveDefaultsBtn">Save Defaults</button>
+                        </div>
+                    </div>
+
+                    <!-- Data & Privacy -->
+                    <div class="settings-card settings-card-danger">
+                        <div class="settings-card-header">
+                            <span class="settings-icon">🔒</span>
+                            <div>
+                                <h3>Data &amp; Privacy</h3>
+                                <p>Manage your stored data</p>
+                            </div>
+                        </div>
+                        <div class="settings-body">
+                            <div class="settings-row">
+                                <div class="sr-info">
+                                    <span class="sr-label">Auto-save</span>
+                                    <span class="sr-sub">Automatically save changes locally</span>
+                                </div>
+                                <button class="toggle-switch active" id="autoSaveToggle" role="switch"
+                                    aria-checked="true">
+                                    <div class="toggle-*****"></div>
+                                </button>
+                            </div>
+                            <div class="settings-divider"></div>
+                            <div class="danger-actions">
+                                <button class="danger-btn" id="clearTasksBtn">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <polyline points="3 6 5 6 21 6" />
+                                        <path
+                                            d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2" />
+                                    </svg>
+                                    Clear All Tasks
+                                </button>
+                                <button class="danger-btn" id="resetAppBtn">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <polyline points="1 4 1 10 7 10" />
+                                        <path d="M3.51 15a9 9 0 1 0 .49-3.38" />
+                                    </svg>
+                                    Reset App
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- About -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <span class="settings-icon">✨</span>
+                            <div>
+                                <h3>About SalvoSpace</h3>
+                                <p>Version & info</p>
+                            </div>
+                        </div>
+                        <div class="settings-body">
+                            <div class="about-info">
+                                <div class="about-row"><span>Version</span><span>2.0.0</span></div>
+                                <div class="about-row"><span>Build</span><span>2026.04</span></div>
+                                <div class="about-row"><span>Storage</span><span>localStorage</span></div>
+                                <div class="about-row"><span>Charts</span><span>Chart.js 4.4</span></div>
+                                <div class="about-row"><span>Developed by</span><span>Sagnik ✦</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- end settings-grid -->
+            </div><!-- end settings -->
+
+        </main>
+    </div><!-- end shell -->
+
+    <!-- FAB -->
+    <button class="fab" id="fabBtn" aria-label="Add task">
+        <span class="fab-ring"></span>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+    </button>
+
+    <!-- ADD TASK MODAL -->
+    <div class="modal-wrap" id="addModal" role="dialog" aria-modal="true" aria-labelledby="modalHeading">
+        <div class="modal-box">
+            <div class="modal-top">
+                <h3 id="modalHeading">New Task</h3>
+                <button class="modal-xbtn" id="modalXBtn" aria-label="Close">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="fg">
+                    <label for="mTitle">Title <span class="req">*</span></label>
+                    <input type="text" id="mTitle" placeholder="e.g. Write weekly report…" autocomplete="off" />
+                </div>
+                <div class="fg">
+                    <label for="mDesc">Description <span class="opt">(optional)</span></label>
+                    <textarea id="mDesc" rows="2" placeholder="Add more details…"></textarea>
+                </div>
+                <div class="fg-row">
+                    <div class="fg">
+                        <label for="mTime">Time of Day</label>
+                        <div class="sel-wrap">
+                            <select id="mTime">
+                                <option value="morning">🌅 Morning</option>
+                                <option value="afternoon">☀️ Afternoon</option>
+                                <option value="evening">🌙 Evening</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="fg">
+                        <label for="mPriority">Priority</label>
+                        <div class="sel-wrap">
+                            <select id="mPriority">
+                                <option value="high">🔴 High</option>
+                                <option value="medium">🟡 Medium</option>
+                                <option value="low">🟢 Low</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="mcancel" id="mCancelBtn">Cancel</button>
+                    <button class="msave" id="mSaveBtn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        Add Task
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT TASK MODAL -->
+    <div class="modal-wrap" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editHeading">
+        <div class="modal-box">
+            <div class="modal-top">
+                <h3 id="editHeading">Edit Task</h3>
+                <button class="modal-xbtn" id="editXBtn" aria-label="Close">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editId" />
+                <div class="fg">
+                    <label for="eTitle">Title</label>
+                    <input type="text" id="eTitle" autocomplete="off" />
+                </div>
+                <div class="fg">
+                    <label for="eDesc">Description</label>
+                    <textarea id="eDesc" rows="2"></textarea>
+                </div>
+                <div class="fg-row">
+                    <div class="fg">
+                        <label for="eTime">Time of Day</label>
+                        <div class="sel-wrap">
+                            <select id="eTime">
+                                <option value="morning">🌅 Morning</option>
+                                <option value="afternoon">☀️ Afternoon</option>
+                                <option value="evening">🌙 Evening</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="fg">
+                        <label for="ePriority">Priority</label>
+                        <div class="sel-wrap">
+                            <select id="ePriority">
+                                <option value="high">🔴 High</option>
+                                <option value="medium">🟡 Medium</option>
+                                <option value="low">🟢 Low</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="mcancel" id="eCancelBtn">Cancel</button>
+                    <button class="msave" id="eUpdateBtn">Update Task</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WEEKLY REPORT MODAL -->
+    <div class="modal-wrap" id="reportModal" role="dialog" aria-modal="true" aria-labelledby="reportHeading">
+        <div class="modal-box modal-box-lg">
+            <div class="modal-top">
+                <h3 id="reportHeading">📊 Weekly Report</h3>
+                <button class="modal-xbtn" id="reportXBtn" aria-label="Close">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" id="reportBody"></div>
+        </div>
+    </div>
+
+    <!-- ONBOARDING MODAL -->
+    <div class="modal-wrap" id="onboardModal" role="dialog" aria-modal="true">
+        <div class="modal-box modal-box-ob">
+            <div class="ob-hero">
+                <div class="ob-logo">
+                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z" fill="url(#oblg)" />
+                        <defs>
+                            <linearGradient id="oblg" x1="2" y1="2" x2="22" y2="12">
+                                <stop stop-color="#0891B2" />
+                                <stop offset="1" stop-color="#A78BFA" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <h2>Welcome to SalvoSpace</h2>
+                <p>Your intelligent productivity companion. Manage tasks, track performance, and get AI-powered
+                    insights.</p>
+            </div>
+            <div class="ob-cards">
+                <div class="ob-card"><span>📝</span>
+                    <div><b>Smart Tasks</b>
+                        <p>Organize by time of day</p>
+                    </div>
+                </div>
+                <div class="ob-card"><span>📊</span>
+                    <div><b>Rich Analytics</b>
+                        <p>4 interactive charts</p>
+                    </div>
+                </div>
+                <div class="ob-card"><span>🤖</span>
+                    <div><b>AI Insights</b>
+                        <p>Smart recommendations</p>
+                    </div>
+                </div>
+            </div>
+            <div class="ob-shortcuts">
+                <span><kbd>A</kbd> Add task</span>
+                <span><kbd>Ctrl+K</kbd> Search</span>
+                <span><kbd>Esc</kbd> Close modal</span>
+            </div>
+            <button class="msave ob-start" id="obStartBtn">Start Spacing →</button>
+        </div>
+    </div>
+
+    <div class="toasts" id="toastContainer" aria-live="polite"></div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
