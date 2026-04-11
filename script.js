@@ -1,3 +1,7 @@
+/* ============================================
+   SALVOSPACE v2 — Smart Productivity System
+   script.js
+============================================ */
 'use strict';
 
 /* =============================
@@ -9,6 +13,7 @@ const SK = {
     ONBOARDED: 'salvospace_onboarded',
     SORT: 'salvospace_sort',
     SETTINGS: 'salvospace_settings',
+    DAILY_SCORES: 'salvospace_daily_scores',
 };
 
 const PRIO_WEIGHT = { high: 3, medium: 2, low: 1 };
@@ -175,7 +180,7 @@ function updateTask(id, title, desc, time, priority) {
     if (!t) return;
     t.title = title.trim(); t.desc = desc.trim(); t.time = time; t.priority = priority;
     saveTasks(); renderAll(); updateCharts();
-    showToast('Task updated!', 'info');
+    showToast('✏️ Task updated!', 'info');
 }
 
 function deleteTask(id) {
@@ -188,7 +193,7 @@ function deleteTask(id) {
     } else {
         state.tasks = state.tasks.filter(t => t.id !== id); saveTasks(); renderAll(); updateCharts();
     }
-    showToast('Task deleted', 'info');
+    showToast('🗑️ Task deleted', 'info');
 }
 
 function toggleDone(id) {
@@ -265,6 +270,72 @@ function scoreLabel(s) {
     return 'Just Getting Started 🌱';
 }
 
+
+/* =============================
+   DAILY SCORE PERSISTENCE
+============================= */
+
+// Returns today as YYYY-MM-DD
+function todayKey() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// Save today's score into the persistent daily log
+function saveDailyScore() {
+    try {
+        const raw = ls(SK.DAILY_SCORES);
+        const log = raw ? JSON.parse(raw) : {};
+        const { score, completionPct, highPrioPct, morningPct } = calcScore();
+        log[todayKey()] = {
+            score, completionPct, highPrioPct, morningPct,
+            done: state.tasks.filter(t => t.done).length,
+            total: state.tasks.length,
+            ts: Date.now(),
+        };
+        // Prune to last 90 days
+        const keys = Object.keys(log).sort();
+        if (keys.length > 90) keys.slice(0, keys.length - 90).forEach(k => delete log[k]);
+        lss(SK.DAILY_SCORES, JSON.stringify(log));
+    } catch { }
+}
+
+// Returns array of {date, label, score, done, total} for last N days
+// score is null for days with no recorded data
+function getDailyHistory(days = 7) {
+    let log = {};
+    try { const raw = ls(SK.DAILY_SCORES); if (raw) log = JSON.parse(raw); } catch { }
+    const result = [];
+    for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const e = log[key] || null;
+        result.push({ date: key, label: DAYS[d.getDay()], score: e ? e.score : null, done: e ? e.done : 0, total: e ? e.total : 0 });
+    }
+    return result;
+}
+
+// Returns 4 weeks of weekly average scores
+function getWeeklyHistory() {
+    let log = {};
+    try { const raw = ls(SK.DAILY_SCORES); if (raw) log = JSON.parse(raw); } catch { }
+    const weeks = [];
+    for (let w = 3; w >= 0; w--) {
+        let sum = 0, count = 0, done = 0, total = 0;
+        for (let d = 6; d >= 0; d--) {
+            const dt = new Date(); dt.setDate(dt.getDate() - (w * 7 + d));
+            const key = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+            if (log[key]) { sum += log[key].score; count++; done += log[key].done; total += log[key].total; }
+        }
+        weeks.push({
+            label: w === 0 ? 'This Wk' : w === 1 ? 'Last Wk' : `${w}W ago`,
+            score: count > 0 ? Math.round(sum / count) : null,
+            done, total,
+        });
+    }
+    return weeks;
+}
+
 /* =============================
    RENDER MASTER
 ============================= */
@@ -277,6 +348,7 @@ function renderAll() {
     updateSidebarScore();
     updateNavBadge();
     renderInsights();
+    saveDailyScore();
     if (state.currentView === 'reports') renderReports();
 }
 
@@ -455,7 +527,7 @@ function generateInsightsData() {
             label: 'TOP PERIOD',
             value: `${topPeriod[2]} ${topPeriod[0]}`,
             sub: topPeriod[1] > 0 ? `${topPeriod[1]} task${topPeriod[1] > 1 ? 's' : ''} completed during this window. Schedule deep work here.` : 'No tasks completed yet. Start with your morning tasks.',
-            color: 'cyan',
+            color: 'purple',
         },
         {
             label: 'TASK VOLUME',
@@ -508,23 +580,32 @@ function renderReports() {
     const done = state.tasks.filter(t => t.done).length;
     const { score } = calcScore();
     const highDone = state.tasks.filter(t => t.done && t.priority === 'high').length;
+    const completionPct = total > 0 ? Math.round((done / total) * 100) : 0;
 
-    // Generate day/week data
-    const today = new Date();
+    // ---- Pull REAL historical data ----
     const isWeekly = period === 'weekly';
-    const labels = isWeekly
-        ? Array.from({ length: 7 }, (_, i) => { const d = new Date(today); d.setDate(d.getDate() - (6 - i)); return DAYS[d.getDay()]; })
-        : ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+    let history, labels, trend;
 
-    // Mock productivity values (seeded from real score)
-    const base = score;
-    const trend = labels.map((_, i) => {
-        const noise = Math.floor(Math.random() * 30) - 10;
-        return Math.max(0, Math.min(100, Math.round(base * 0.7 + noise + (i / labels.length) * 20)));
-    });
-    // Today / this week is actual score
-    trend[trend.length - 1] = score;
-    const maxTrend = Math.max(...trend, 1);
+    if (isWeekly) {
+        history = getDailyHistory(7);
+        labels = history.map(h => h.label);
+        // Use actual score if recorded; null if no data that day
+        trend = history.map(h => h.score);
+    } else {
+        const wh = getWeeklyHistory();
+        history = wh;
+        labels = wh.map(h => h.label);
+        trend = wh.map(h => h.score);
+    }
+
+    // For display: replace null with 0 only for bar widths; keep null label
+    const trendDisplay = trend.map(v => v === null ? 0 : v);
+    const maxTrend = Math.max(...trendDisplay, 1);
+
+    // Best score in the period (only from days with data)
+    const realScores = trend.filter(v => v !== null);
+    const bestScore = realScores.length > 0 ? Math.max(...realScores) : score;
+    const daysWithData = realScores.length;
 
     container.innerHTML = `
     <div class="reports-summary">
@@ -536,12 +617,12 @@ function renderReports() {
       <div class="rs-card rsc-green">
         <div class="rs-label">COMPLETED</div>
         <div class="rs-value">${done}</div>
-        <div class="rs-sub">${total > 0 ? Math.round((done / total) * 100) : 0}% completion rate</div>
+        <div class="rs-sub">${completionPct}% completion rate</div>
       </div>
       <div class="rs-card rsc-amber">
-        <div class="rs-label">TOP SCORE</div>
-        <div class="rs-value">${Math.max(...trend)}</div>
-        <div class="rs-sub">pts · ${isWeekly ? 'best day' : 'best week'}</div>
+        <div class="rs-label">BEST SCORE</div>
+        <div class="rs-value">${bestScore}</div>
+        <div class="rs-sub">pts · ${isWeekly ? 'best day' : 'best week'} · ${daysWithData} day${daysWithData !== 1 ? 's' : ''} tracked</div>
       </div>
       <div class="rs-card rsc-red">
         <div class="rs-label">HIGH PRIO DONE</div>
@@ -553,20 +634,27 @@ function renderReports() {
     <div class="reports-body">
       <div class="report-panel-card">
         <h4>📈 ${isWeekly ? 'Daily' : 'Weekly'} Productivity Trend</h4>
-        <div class="report-days-grid">
-          ${labels.map((lbl, i) => `
+        ${daysWithData === 0
+            ? '<p style="font-size:.8rem;color:var(--txt3);padding:8px 0">No data recorded yet. Your scores will appear here as you use the app each day.</p>'
+            : `<div class="report-days-grid">
+          ${labels.map((lbl, i) => {
+                const val = trendDisplay[i];
+                const hasData = trend[i] !== null;
+                const barWidth = Math.round((val / maxTrend) * 100);
+                return `
             <div class="report-day-row">
-              <span class="rdr-day">${lbl}</span>
+              <span class="rdr-day" style="${!hasData ? 'opacity:.4' : ''}">${lbl}</span>
               <div class="rdr-bar-track">
-                <div class="rdr-bar-fill" style="width:${Math.round((trend[i] / maxTrend) * 100)}%"></div>
+                <div class="rdr-bar-fill" style="width:${barWidth}%;${!hasData ? 'opacity:.25' : ''}"></div>
               </div>
-              <span class="rdr-val">${trend[i]}</span>
-            </div>`).join('')}
-        </div>
+              <span class="rdr-val" style="${!hasData ? 'opacity:.4' : ''}">${hasData ? val : '—'}</span>
+            </div>`;
+            }).join('')}
+        </div>`}
       </div>
 
       <div class="report-panel-card">
-        <h4>📋 ${isWeekly ? 'This Week\'s' : 'This Month\'s'} Tasks</h4>
+        <h4>📋 ${isWeekly ? "This Week's" : "This Month's"} Tasks</h4>
         <div class="report-task-list">
           ${state.tasks.length === 0
             ? '<div style="padding:20px;text-align:center;color:var(--txt3);font-size:.82rem">No tasks to report.</div>'
@@ -583,10 +671,11 @@ function renderReports() {
       <div class="report-panel-card" style="grid-column:1/-1">
         <h4>📊 ${isWeekly ? 'Weekly' : 'Monthly'} Summary</h4>
         <p style="font-size:.83rem;color:var(--txt2);line-height:1.8">
-          ${scoreLabel(score)} — Your current productivity score is <strong style="color:var(--pri)">${score}/100</strong>.
-          ${done} out of ${total} tasks have been completed, giving a <strong>${total > 0 ? Math.round((done / total) * 100) : 0}%</strong> completion rate.
-          ${highDone > 0 ? `You've completed <strong>${highDone}</strong> high-priority task${highDone > 1 ? 's' : ''}, demonstrating excellent prioritization.` : ''}
-          ${score >= 70 ? '🚀 You\'re performing at a high level — keep the momentum going!' : score >= 40 ? '⚡ Good work so far. Prioritize your pending tasks to boost your score.' : '🌱 Just getting started. Try completing your morning tasks first to build a streak.'}
+          ${scoreLabel(score)} — Today's productivity score is <strong style="color:var(--pri)">${score}/100</strong>.
+          ${done} of ${total} tasks completed (${completionPct}% rate).
+          ${highDone > 0 ? `${highDone} high-priority task${highDone > 1 ? 's' : ''} completed — excellent prioritization.` : 'No high-priority tasks completed yet.'}
+          ${daysWithData > 1 ? `Over the last ${daysWithData} tracked days, your best score was <strong style="color:var(--pri)">${bestScore}</strong>.` : 'Keep using the app daily to build your trend history.'}
+          ${score >= 70 ? '🚀 High-level performance — keep the momentum going!' : score >= 40 ? '⚡ Good pace. Focus on pending tasks to push higher.' : '🌱 Just starting. Complete your morning tasks first to build a streak.'}
         </p>
       </div>
     </div>`;
@@ -632,9 +721,9 @@ function handleView(view) {
 function getChartColors() {
     const isDark = doc().getAttribute('data-theme') === 'dark';
     return {
-        grid: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.06)',
-        tick: isDark ? '#94A3B8' : '#475569',
-        text: isDark ? '#E2E8F0' : '#0F172A',
+        grid: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+        tick: isDark ? '#94A3B8' : '#6B7280',
+        text: isDark ? '#EEF2FF' : '#1E1B4B',
     };
 }
 
@@ -686,8 +775,8 @@ function buildBarChart() {
     state.charts.bar = new Chart(ctx, {
         type: 'bar', data: {
             labels: periods, datasets: [
-                { label: 'Completed', data: completed, backgroundColor: 'rgba(29,78,216,0.75)', borderColor: '#1D4ED8', borderWidth: 2, borderRadius: 8, borderSkipped: false },
-                { label: 'Pending', data: pending, backgroundColor: 'rgba(148,163,184,0.35)', borderColor: '#94A3B8', borderWidth: 2, borderRadius: 8, borderSkipped: false },
+                { label: 'Completed', data: completed, backgroundColor: 'rgba(99,102,241,0.75)', borderColor: '#6366F1', borderWidth: 2, borderRadius: 8, borderSkipped: false },
+                { label: 'Pending', data: pending, backgroundColor: 'rgba(139,92,246,0.35)', borderColor: '#8B5CF6', borderWidth: 2, borderRadius: 8, borderSkipped: false },
             ]
         }, options: opts
     });
@@ -711,19 +800,40 @@ function buildPieChart() {
 
 function buildLineChart() {
     const ctx = qs('#lineChart'); if (!ctx) return;
-    const today = new Date();
-    const labels = Array.from({ length: 7 }, (_, i) => { const d = new Date(today); d.setDate(d.getDate() - (6 - i)); return DAYS[d.getDay()]; });
-    const { score } = calcScore();
-    const productivity = labels.map((_, i) => Math.round(40 + Math.random() * 30 + (i / 6) * score * 0.5));
-    productivity[productivity.length - 1] = score;
+    // Use real stored daily scores — null means no data for that day
+    const history = getDailyHistory(7);
+    const labels = history.map(h => h.label);
+    // For days with no stored data, use null so Chart.js shows a gap
+    const productivity = history.map(h => h.score);
     const goal = labels.map(() => 80);
-    const opts = chartDefaults(); opts.scales.y.min = 0; opts.scales.y.max = 100;
-    opts.elements = { point: { radius: 5, hoverRadius: 7, borderWidth: 2 }, line: { tension: 0.45, borderWidth: 2.5 } };
+    const opts = chartDefaults();
+    opts.scales.y.min = 0; opts.scales.y.max = 100;
+    opts.elements = { point: { radius: 5, hoverRadius: 7, borderWidth: 2 }, line: { tension: 0.35, borderWidth: 2.5 } };
+    opts.plugins.tooltip = {
+        ...opts.plugins.tooltip,
+        callbacks: {
+            label: (ctx) => {
+                if (ctx.raw === null) return ' No data recorded';
+                const h = history[ctx.dataIndex];
+                return [` Score: ${ctx.raw}`, ` Done: ${h.done} / ${h.total} tasks`];
+            }
+        }
+    };
+    // spanGaps: false means gaps show for days with null (no data)
     state.charts.line = new Chart(ctx, {
         type: 'line', data: {
             labels, datasets: [
-                { label: 'Productivity', data: productivity, borderColor: '#2563EB', backgroundColor: 'rgba(37,99,235,0.1)', fill: true, pointBackgroundColor: '#2563EB' },
-                { label: 'Goal', data: goal, borderColor: '#10B981', borderDash: [6, 4], backgroundColor: 'transparent', pointRadius: 0 },
+                {
+                    label: 'Daily Score',
+                    data: productivity,
+                    borderColor: '#2563EB',
+                    backgroundColor: 'rgba(37,99,235,0.1)',
+                    fill: true,
+                    pointBackgroundColor: productivity.map(v => v === null ? 'transparent' : '#2563EB'),
+                    pointBorderColor: productivity.map(v => v === null ? 'transparent' : '#2563EB'),
+                    spanGaps: false,
+                },
+                { label: 'Target', data: goal, borderColor: '#10B981', borderDash: [6, 4], backgroundColor: 'transparent', pointRadius: 0 },
             ]
         }, options: opts
     });
@@ -740,8 +850,8 @@ function buildDoughnutChart() {
         data: {
             labels: ['Done', 'Pending'], datasets: [{
                 data: [done || 0, pending || (total === 0 ? 1 : 0)],
-                backgroundColor: ['rgba(29,78,216,0.85)', 'rgba(148,163,184,0.2)'],
-                borderColor: ['#1D4ED8', 'transparent'], borderWidth: 2, hoverOffset: 4,
+                backgroundColor: ['rgba(99,102,241,0.85)', 'rgba(99,102,241,0.15)'],
+                borderColor: ['#6366F1', 'transparent'], borderWidth: 2, hoverOffset: 4,
             }]
         },
         options: opts,
@@ -874,7 +984,7 @@ function exportCharts() {
             a.href = firstChart.toBase64Image();
             a.download = `salvospace-${new Date().toISOString().slice(0, 10)}.png`;
             a.click();
-            showToast('✅ Chart exported!', 'success');
+            showToast('Chart exported!', 'success');
         } catch { showToast('Export failed — try again', 'error'); }
     }, 400);
 }
@@ -882,8 +992,14 @@ function exportCharts() {
 /* =============================
    ONBOARDING
 ============================= */
-function checkOnboard() { if (!ls(SK.ONBOARDED)) qs('#onboardModal')?.classList.add('open'); }
-function closeOnboard() { qs('#onboardModal')?.classList.remove('open'); lss(SK.ONBOARDED, '1'); }
+function checkOnboard() {
+    if (!ls(SK.ONBOARDED)) qs('#onboardModal')?.classList.add('open');
+
+}
+function closeOnboard() {
+    qs('#onboardModal')?.classList.remove('open'); lss(SK.ONBOARDED, '1');
+
+}
 
 /* =============================
    TOASTS
@@ -1039,9 +1155,7 @@ function setupEvents() {
     // Settings toggles
     setupToggle('settingsThemeToggle', () => toggleTheme());
     setupToggle('compactModeToggle', (on) => { state.settings.compactMode = on; applyCompactMode(); saveSettings(); });
-    setupToggle(
-        'animationsToggle', (on) => { state.settings.animations = on; saveSettings(); }
-    );
+    setupToggle('animationsToggle', (on) => { state.settings.animations = on; saveSettings(); });
     setupToggle('taskRemindersToggle', (on) => { state.settings.taskReminders = on; saveSettings(); });
     setupToggle('completionAlertsToggle', (on) => { state.settings.completionAlerts = on; saveSettings(); });
     setupToggle('dailySummaryToggle', (on) => { state.settings.dailySummary = on; saveSettings(); });
@@ -1066,7 +1180,7 @@ function setupEvents() {
     qs('#clearTasksBtn')?.addEventListener('click', () => {
         if (confirm('Clear ALL tasks? This cannot be undone.')) {
             state.tasks = []; saveTasks(); renderAll(); updateCharts();
-            showToast('All tasks cleared', 'info');
+            showToast('🗑️ All tasks cleared', 'info');
         }
     });
     qs('#resetAppBtn')?.addEventListener('click', () => {
@@ -1115,22 +1229,31 @@ function setupKeys() {
 /* =============================
    UTILS
 ============================= */
-function qs(sel) { return document.querySelector(sel); }
-function qsa(sel) { return document.querySelectorAll(sel); }
-function doc() { return document.documentElement; }
+function qs(sel) {
+    return document.querySelector(sel);
+
+}
+function qsa(sel) {
+    return document.querySelectorAll(sel);
+
+}
+function doc() {
+    return document.documentElement;
+
+}
 function ls(k) {
-    try {
-        return localStorage.getItem(k);
-    } catch { return null; }
+    try { return localStorage.getItem(k); } catch { return null; }
 }
 function lss(k, v) {
     try { localStorage.setItem(k, v); } catch { }
 }
 function uid() {
     return Math.random().toString(36).slice(2) + Date.now().toString(36);
+
 }
 function escHtml(s) {
     const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+
 }
 function setText(id, val) {
     const el = qs(`#${id}`); if (el) el.textContent = val;
